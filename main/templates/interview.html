@@ -16,8 +16,12 @@
             <input style="display:none;" id="chat-message-submit" type="button" value="Send" />
         </div>
         <div class='code box'>
-            <p>Coding Area</p>
-            
+            <!-- <p>Coding Area</p> -->
+            <form method="POST">
+                {% csrf_token %}
+                {{form.as_p}}
+                <button id="compile-button" type="submit">complie</button>
+            </form>
         </div>
         <div class='output box'>
             <p>Output Screen</p>
@@ -122,5 +126,43 @@
 
         messageInputDom.value = '';
     };
+</script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.5/ace.js"></script>
+<script type="text/javascript">
+$(function() {
+    $('#id_code').attr('data-editor','python');
+    $('#id_code').attr('data-gutter','1');
+    $('textarea[data-editor]').each(function() {
+        var textarea = $(this);
+        var mode = textarea.data('editor');
+        var editDiv = $('<div>', {
+        position: 'absolute',
+        width: textarea.width(),
+        height: textarea.height(),
+        'class': textarea.attr('class')
+        }).insertBefore(textarea);
+        textarea.css('display', 'none');
+        var editor = ace.edit(editDiv[0]);
+        editor.renderer.setShowGutter(textarea.data('gutter'));
+        editor.getSession().setValue(textarea.val());
+        editor.getSession().setMode("ace/mode/" + mode);
+        editor.setTheme("ace/theme/idle_fingers");
+
+
+        editor.getSession().on("change", function () {
+        textarea.val(editor.getSession().getValue());
+        });
+        $('#click').click(function(e){
+            e.preventDefault();
+        });
+
+        // copy back to textarea on form submit...
+        // textarea.closest('form').submit(function() {
+        //     // textarea.css('display', '');
+        // textarea.val(editor.getSession().getValue());
+        // })
+    });
+});
 </script>
 </html>
