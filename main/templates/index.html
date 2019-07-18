@@ -1,1 +1,9 @@
-sdfghhgj    
+<html>
+    <body>
+        {% if user.is_authenticated %}
+        <p class="display-4">Hello, {{ user.username }}</p>
+        {% else %}
+        <a class="lead" href="{% url 'login' %}">Log in</a> {% endif %}
+        <h4><a href="{% url 'interview' user.username '2k19' %}"><b>Generate Interview</b></a></h4>
+    </body>
+</html>

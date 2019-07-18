@@ -1,0 +1,126 @@
+<html>
+
+<head>
+    <title>Interview</title>
+</head>
+
+<body>
+    <div class='container'>
+        <div class='video box'>
+            <p>Interview Id: {{ room_name }}, Live Video Chat</p>
+        </div>
+        <div class='text box'>
+            <p>Live Chat</p>
+            <textarea id="chat-log" cols="59" rows="9"></textarea><br/>
+            <input id="chat-message-input" type="text" size="59" /><br/>
+            <input style="display:none;" id="chat-message-submit" type="button" value="Send" />
+        </div>
+        <div class='code box'>
+            <p>Coding Area</p>
+            
+        </div>
+        <div class='output box'>
+            <p>Output Screen</p>
+            <textarea id="output-log" cols="102" rows="10"></textarea><br/>
+        </div>
+        <button>End session</button>
+        <button type='submit'>Submit</button>
+        <button type='submit'>Compile and Run</button>
+        
+    </div>
+</body>
+<style>
+    button{
+        background-color: #26b061;
+        color: white;
+    }
+    .container {
+        display: grid;
+        grid-gap: 5px;
+        grid-template-columns: 500px 400px 440px;
+        grid-template-rows: 300px 200px 20px;
+        background-color: #fff;
+        color: #444;
+    }
+    #chat-log{
+        background-color: #39424e;
+        color: white;
+    }
+
+    #output-log{
+        background-color: #39424e;
+    }
+    .box {
+        background-color: rgb(134, 134, 134);
+        color: #fff;
+        border-radius: 5px;
+        padding: 4px;
+        font-size: 50%;
+    }
+    
+    p{
+        font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+        font-size: 11px;
+    }
+
+    .video {
+        grid-column: 1 / span 1;
+        grid-row: 1 / span 1;
+        background-color: #39424e;
+    }
+    
+    .code {
+        grid-column: 2 / span 2;
+        grid-row: 1 / span 1;
+        background-color: #39424e;
+    }
+    
+    .text {
+        grid-column: 1 / span 1;
+        grid-row: 2 / span 1;
+    }
+    
+    .output {
+        grid-column: 2 / span 2;
+        grid-row: 2 / span 1;
+    }
+
+</style>
+<script>
+    var roomName = {{ room_name_json }};
+    var man = {{ man }};
+    console.log('Room name = ' + roomName);
+    
+    var chatSocket = new WebSocket(
+        'ws://' + window.location.host +
+        '/interview/' + roomName);
+
+    chatSocket.onmessage = function(e) {
+        var data = JSON.parse(e.data);
+        var message = data['message'];
+        document.querySelector('#chat-log').value += (man + ' : ' + message + '\n');
+    };
+
+    chatSocket.onclose = function(e) {
+        console.error('Chat socket closed unexpectedly');
+    };
+
+    document.querySelector('#chat-message-input').focus();
+    document.querySelector('#chat-message-input').onkeyup = function(e) {
+        if (e.keyCode == 13) {
+            var message = document.querySelector('#chat-message-input').value;
+            document.querySelector('#chat-message-submit').click();
+        }
+    };
+
+    document.querySelector('#chat-message-submit').onclick = function(e) {
+        var messageInputDom = document.querySelector('#chat-message-input');
+        var message = messageInputDom.value;
+        chatSocket.send(JSON.stringify({
+            'message': message
+        }));
+
+        messageInputDom.value = '';
+    };
+</script>
+</html>
