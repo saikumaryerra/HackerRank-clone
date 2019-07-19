@@ -146,9 +146,6 @@ function createButton(e){
         $.ajax({
             url : "{% url 'compile_code' %}",
             type: "POST",
-            // data : {
-            //     'code':code
-            // },
             data : form.serialize(),
             dataType: 'json',
             success: function(data){
