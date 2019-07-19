@@ -43,36 +43,24 @@ def compile_code(request):
    file.write(code)
    file.close()
    cmd = 'timelimit -t1 -pq python {}'.format(filename)
-   # x=subprocess.call(cmd,shell=True)
-   # print(x)
    
-   if not subprocess.call(cmd,shell=True):
-         output=subprocess.check_output(cmd,shell=True)
-         result = {
-            'output' : output,
-            'status' : 'compiled succesfully'
-         }
-   else:
-         result = {
-            # 'output' : os.popen('python code.py').read(),
-            'status' : 'timed out'
-         }
-
-   # try:
-   #    if not subprocess.call(cmd,shell=True):
-   #       output=subprocess.check_output(cmd,shell=True)
-   #       result = {
-   #          'output' : output,
-   #          'status' : 'compiled succesfully'
-   #       }
-   #    else:
-   #       result = {
-   #          'output' : subprocess.check_output(cmd,shell=True),
-   #          'status' : 'timed out'
-   #       }
-   # except:
-   #    result={
-   #       'error' : 'error'
-   #    }
+   try:
+      if not subprocess.call(cmd,shell=True):
+            output=subprocess.check_output(cmd,shell=True)
+            result = {
+               'output' : str(output),
+               'status' : 'compiled succesfully'
+            }
+      else:
+            result = {
+               # 'output' : os.popen('python code.py').read(),
+               'output' : 'timed out',
+               'status' : 'error'
+            }
+   except:
+      result={
+         'output' : 'error',
+         'status' : 'error'
+      }
    print(result)
-   return mark_safe(json.dumps(result))
+   return JsonResponse(result)

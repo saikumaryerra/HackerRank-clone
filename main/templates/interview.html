@@ -153,7 +153,8 @@ function createButton(e){
             dataType: 'json',
             success: function(data){
                 console.log(data)
-                // $('#output-log').val(data);
+                var out = data.output + data.status;
+                $('#output-log').val(out);
             }
         });
     }
