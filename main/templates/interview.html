@@ -17,10 +17,10 @@
         </div>
         <div class='code box'>
             <!-- <p>Coding Area</p> -->
-            <form method="POST">
+            <form method="POST" id="codeform">
                 {% csrf_token %}
                 {{form.as_p}}
-                <button id="compile-button" type="submit">complie</button>
+                <!-- <button id="codeform-submit" type="submit">complie</button> -->
             </form>
         </div>
         <div class='output box'>
@@ -29,7 +29,7 @@
         </div>
         <button>End session</button>
         <button type='submit'>Submit</button>
-        <button type='submit'>Compile and Run</button>
+        <button type='submit' id="compileRun">Compile and Run</button>
         
     </div>
 </body>
@@ -130,6 +130,38 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.5/ace.js"></script>
 <script type="text/javascript">
+
+function createButton(e){
+        var btnElement = document.createElement('button');
+        btnElement.setAttribute('id','codeform-submit');
+        btnElement.setAttribute('type','submit');
+        document.getElementById('codeform').appendChild(btnElement);
+        btnElement.style.display = 'none';
+    }
+    function ajaxcall(e){
+        e.preventDefault();
+        // code = $('#id_code').val()
+        console.log('sai')
+        var form = $('#id_code').closest("form")
+        $.ajax({
+            url : "{% url 'compile_code' %}",
+            type: "POST",
+            // data : {
+            //     'code':code
+            // },
+            data : form.serialize(),
+            dataType: 'json',
+            success: function(data){
+                console.log(data)
+                // $('#output-log').val(data);
+            }
+        });
+    }
+function compileRun(e){
+    createButton(e);
+    $('#codeform-submit').click(ajaxcall);
+    $('#codeform-submit').click();
+}
 $(function() {
     $('#id_code').attr('data-editor','python');
     $('#id_code').attr('data-gutter','1');
@@ -153,16 +185,22 @@ $(function() {
         editor.getSession().on("change", function () {
         textarea.val(editor.getSession().getValue());
         });
-        $('#click').click(function(e){
-            e.preventDefault();
-        });
+        // $('#click').click(function(e){
+        //     e.preventDefault();
+        // });
 
         // copy back to textarea on form submit...
-        // textarea.closest('form').submit(function() {
+        // textarea.closest('form').submit(function(e) {
         //     // textarea.css('display', '');
-        // textarea.val(editor.getSession().getValue());
+        // // textarea.val(editor.getSession().getValue());
+        // console.log('form submission')
+        // e.preventDefault();
+        // e.stopPropagation();
+        // return false;
         // })
     });
+    $('#compileRun').click(compileRun);
 });
+console.log('form ')
 </script>
 </html>
