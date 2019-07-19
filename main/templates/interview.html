@@ -11,8 +11,8 @@
         </div>
         <div class='text box'>
             <p>Live Chat</p>
-            <textarea id="chat-log" cols="59" rows="9"></textarea><br/>
-            <input id="chat-message-input" type="text" size="59" /><br/>
+            <textarea id="chat-log" cols="59" rows="9"></textarea><br />
+            <input id="chat-message-input" type="text" size="59" /><br />
             <input style="display:none;" id="chat-message-submit" type="button" value="Send" />
         </div>
         <div class='code box'>
@@ -25,19 +25,20 @@
         </div>
         <div class='output box'>
             <p>Output Screen</p>
-            <textarea id="output-log" cols="102" rows="10"></textarea><br/>
+            <textarea id="output-log" cols="102" rows="10"></textarea><br />
         </div>
         <button>End session</button>
         <button type='submit'>Submit</button>
         <button type='submit' id="compileRun">Compile and Run</button>
-        
+
     </div>
 </body>
 <style>
-    button{
+    button {
         background-color: #26b061;
         color: white;
     }
+
     .container {
         display: grid;
         grid-gap: 5px;
@@ -46,14 +47,16 @@
         background-color: #fff;
         color: #444;
     }
-    #chat-log{
+
+    #chat-log {
         background-color: #39424e;
         color: white;
     }
 
-    #output-log{
+    #output-log {
         background-color: #39424e;
     }
+
     .box {
         background-color: rgb(134, 134, 134);
         color: #fff;
@@ -61,8 +64,8 @@
         padding: 4px;
         font-size: 50%;
     }
-    
-    p{
+
+    p {
         font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
         font-size: 11px;
     }
@@ -72,133 +75,130 @@
         grid-row: 1 / span 1;
         background-color: #39424e;
     }
-    
+
     .code {
         grid-column: 2 / span 2;
         grid-row: 1 / span 1;
         background-color: #39424e;
     }
-    
+
     .text {
         grid-column: 1 / span 1;
         grid-row: 2 / span 1;
     }
-    
+
     .output {
         grid-column: 2 / span 2;
         grid-row: 2 / span 1;
     }
-
 </style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.5/ace.js"></script>
 <script>
     var roomName = {{ room_name_json }};
     var man = {{ man }};
     console.log('Room name = ' + roomName);
-    
+
     var chatSocket = new WebSocket(
         'ws://' + window.location.host +
         '/interview/' + roomName);
 
-    chatSocket.onmessage = function(e) {
+    chatSocket.onmessage = function (e) {
         var data = JSON.parse(e.data);
         var message = data['message'];
-        document.querySelector('#chat-log').value += (man + ' : ' + message + '\n');
+        document.querySelector('#chat-log').value += (message + '\n');
     };
 
-    chatSocket.onclose = function(e) {
+    chatSocket.onclose = function (e) {
         console.error('Chat socket closed unexpectedly');
     };
 
     document.querySelector('#chat-message-input').focus();
-    document.querySelector('#chat-message-input').onkeyup = function(e) {
+    document.querySelector('#chat-message-input').onkeyup = function (e) {
         if (e.keyCode == 13) {
             var message = document.querySelector('#chat-message-input').value;
             document.querySelector('#chat-message-submit').click();
         }
     };
 
-    document.querySelector('#chat-message-submit').onclick = function(e) {
+    document.querySelector('#chat-message-submit').onclick = function (e) {
         var messageInputDom = document.querySelector('#chat-message-input');
-        var message = messageInputDom.value;
+        var message = man + ' : ' + messageInputDom.value;
         chatSocket.send(JSON.stringify({
             'message': message
         }));
 
         messageInputDom.value = '';
     };
-</script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.5/ace.js"></script>
-<script type="text/javascript">
 
-function createButton(e){
+    function createButton(e) {
         var btnElement = document.createElement('button');
-        btnElement.setAttribute('id','codeform-submit');
-        btnElement.setAttribute('type','submit');
+        btnElement.setAttribute('id', 'codeform-submit');
+        btnElement.setAttribute('type', 'submit');
         document.getElementById('codeform').appendChild(btnElement);
         btnElement.style.display = 'none';
     }
-    function ajaxcall(e){
+    function ajaxcall(e) {
         e.preventDefault();
         // code = $('#id_code').val()
         console.log('sai')
         var form = $('#id_code').closest("form")
         $.ajax({
-            url : "{% url 'compile_code' %}",
+            url: "{% url 'compile_code' %}",
             type: "POST",
             data : form.serialize(),
             dataType: 'json',
-            success: function(data){
+            success: function (data) {
                 console.log(data)
                 var out = data.output + data.status;
                 $('#output-log').val(out);
             }
         });
     }
-function compileRun(e){
-    createButton(e);
-    $('#codeform-submit').click(ajaxcall);
-    $('#codeform-submit').click();
-}
-$(function() {
-    $('#id_code').attr('data-editor','python');
-    $('#id_code').attr('data-gutter','1');
-    $('textarea[data-editor]').each(function() {
-        var textarea = $(this);
-        var mode = textarea.data('editor');
-        var editDiv = $('<div>', {
-        position: 'absolute',
-        width: textarea.width(),
-        height: textarea.height(),
-        'class': textarea.attr('class')
-        }).insertBefore(textarea);
-        textarea.css('display', 'none');
-        var editor = ace.edit(editDiv[0]);
-        editor.renderer.setShowGutter(textarea.data('gutter'));
-        editor.getSession().setValue(textarea.val());
-        editor.getSession().setMode("ace/mode/" + mode);
-        editor.setTheme("ace/theme/idle_fingers");
+    function compileRun(e) {
+        createButton(e);
+        $('#codeform-submit').click(ajaxcall);
+        $('#codeform-submit').click();
+    }
+    $(function () {
+        $('#id_code').attr('data-editor', 'python');
+        $('#id_code').attr('data-gutter', '1');
+        $('textarea[data-editor]').each(function () {
+            var textarea = $(this);
+            var mode = textarea.data('editor');
+            var editDiv = $('<div>', {
+                position: 'absolute',
+                width: textarea.width(),
+                height: textarea.height(),
+                'class': textarea.attr('class')
+            }).insertBefore(textarea);
+            textarea.css('display', 'none');
+            var editor = ace.edit(editDiv[0]);
+            editor.renderer.setShowGutter(textarea.data('gutter'));
+            editor.getSession().setValue(textarea.val());
+            editor.getSession().setMode("ace/mode/" + mode);
+            editor.setTheme("ace/theme/idle_fingers");
 
 
-        editor.getSession().on("change", function () {
-        textarea.val(editor.getSession().getValue());
+            editor.getSession().on("change", function () {
+                textarea.val(editor.getSession().getValue());
+            });
+            // $('#click').click(function(e){
+            //     e.preventDefault();
+            // });
+
+            // copy back to textarea on form submit...
+            // textarea.closest('form').submit(function(e) {
+            //     // textarea.css('display', '');
+            // // textarea.val(editor.getSession().getValue());
+            // console.log('form submission')
+            // e.preventDefault();
+            // e.stopPropagation();
+            // return false;
+            // })
         });
-        // $('#click').click(function(e){
-        //     e.preventDefault();
-        // });
-
-        // copy back to textarea on form submit...
-        // textarea.closest('form').submit(function(e) {
-        //     // textarea.css('display', '');
-        // // textarea.val(editor.getSession().getValue());
-        // console.log('form submission')
-        // e.preventDefault();
-        // e.stopPropagation();
-        // return false;
-        // })
+        $('#compileRun').click(compileRun);
     });
-    $('#compileRun').click(compileRun);
-});
-console.log('form ')
 </script>
+
 </html>

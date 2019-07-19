@@ -5,12 +5,14 @@ from .forms import codeForm
 import subprocess , os
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 
-# Create your views here.
+
 def index(request):
     return render(request,'index.html')
 
-def interview(request, interviewer, system_generated_id=11):
+@login_required(login_url='login')
+def interview(request, interview_id):
    #  if request.method == 'POST':
    #      form = codeForm(request.POST)
    #      if form.is_valid():
@@ -29,9 +31,9 @@ def interview(request, interviewer, system_generated_id=11):
    #      room_name = f"{interviewer}{system_generated_id}"
    #      form = codeForm()
     form = codeForm()
-    room_name = f"{interviewer}{system_generated_id}"
+    room_name = interview_id
     return render(request,'interview.html',{ 'room_name': room_name, 
-            'room_name_json': mark_safe(json.dumps(room_name)), 'man': mark_safe(json.dumps(interviewer)),'form':form})
+            'room_name_json': mark_safe(json.dumps(room_name)), 'man': mark_safe(json.dumps(request.user.first_name)),'form':form})
 
 @csrf_exempt
 def compile_code(request):
