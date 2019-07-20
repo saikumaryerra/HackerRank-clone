@@ -95,6 +95,7 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.5/ace.js"></script>
 <script>
+    var user;
     var roomName = {{ room_name_json }};
     var man = {{ man }};
     console.log('Room name = ' + roomName);
@@ -111,9 +112,9 @@
             document.querySelector('#chat-log').value += (message + '\n');
         }
         else if(type == 'code_message'){
-            // document.querySelector('.ace_text-input').value=message;
-            ab.getSession().setValue(message);
-            // document.querySelector('#id_code').value = message;
+            if( message['user'] != '{{ user.username }}'){
+                ab.getSession().setValue(message['code']);
+            }
         }
     };
 
@@ -180,6 +181,7 @@
     }
 
     var ab;
+    var cd;
     $(function () {
         $('#id_code').attr('data-editor', 'python');
         $('#id_code').attr('data-gutter', '1');
@@ -190,41 +192,35 @@
                 position: 'absolute',
                 width: textarea.width(),
                 height: textarea.height(),
-                'class': textarea.attr('class')
+                'class': textarea.attr('class')     
             }).insertBefore(textarea);
+
             textarea.css('display', 'none');
             var editor = ace.edit(editDiv[0]);
             ab = editor;
             editor.renderer.setShowGutter(textarea.data('gutter'));
-            // editor.getSession().setValue(textarea.val());
             editor.getSession().setMode("ace/mode/" + mode);
             editor.setTheme("ace/theme/idle_fingers");
-            
+            cd = $('.ace_text-input');
             document.querySelector('.ace_text-input').onkeyup = function(e){
-                // alert(e);
+                user = '{{ user.username }}';
                 chatSocket.send(JSON.stringify({
                     'type' : 'code_message',
-                    'message': editor.getSession().getValue()
+                    'message': {
+                        'code': editor.getSession().getValue(),
+                        'user': user
+                    }
                 })); 
             };
-            // editor.getSession().on("change", function () {
-            //     textarea.val(editor.getSession().getValue());
-            // });
 
-            // textarea.on("change",function(){
-            //     chatSocket.send(JSON.stringify({
-            //         'type' : 'code_message',
-            //         'message': textarea.val()
-            //     })); 
-            // });
-        });
-        // $('#compileRun').click(compileRun);
-        $('#compileRun').click(function(e){
+            $('#compileRun').click(function(e){
             textarea.val(editor.getSession().getValue());
             createButton(e);
             $('#codeform-submit').click(ajaxcall);
             $('#codeform-submit').click();
         });
+        });
+        
     });
     
 </script>
