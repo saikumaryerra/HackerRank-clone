@@ -7,8 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
-    <script src="//netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
-    <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
     <link rel="shortcut icon" href="{% static 'favicon.ico' %}" />
     <title>{% block title %}{% endblock %}HackerRank</title>
 </head>
@@ -18,7 +16,8 @@
         <div class="[ container ]">
             <div class="[ navbar-header ]">
                 <div class="[ animbrand ]">
-                    <a class="[ navbar-brand ][ animate ] logo_name" href="{% url 'index' %}">HackerRank<img src="{% static 'green-char.png' %}"></a>
+                    <a class="[ navbar-brand ][ animate ] logo_name" href="{% url 'index' %}">HackerRank<img
+                            src="{% static 'green-char.png' %}"></a>
                 </div>
             </div>
 
@@ -42,23 +41,22 @@
 </body>
 
 <style>
-    .logo_name{
+    .logo_name {
         font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
         color: rgb(0, 0, 0);
         font-size: 28px;
         font-weight: 700;
     }
-
 </style>
 <script>
-    document.querySelector('#theme_change').onclick = function(e) {
+    document.querySelector('#theme_change').onclick = function (e) {
         var btn = document.querySelector('#theme_change');
-        if(btn.textContent == 'Dark Theme') {
+        if (btn.textContent == 'Dark Theme') {
             btn.textContent = "Light Theme"
             document.querySelector('#body').style.background = '#424242';
             document.querySelector('.logo_name').style.color = 'white';
             document.querySelector('.extended_body').style.color = 'white';
-        }else{
+        } else {
             btn.textContent = "Dark Theme"
             document.querySelector('#body').style.background = '#FAFAFA';
             document.querySelector('.logo_name').style.color = 'black';
@@ -66,5 +64,8 @@
         }
     };
 </script>
+
+<script src="//netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
 
 </html>
