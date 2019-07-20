@@ -57,3 +57,12 @@ class ChatConsumer(WebsocketConsumer):
             'type1' : type,
             'message': message
         }))
+    def output_message(self, event):
+        type = event['type']
+        message = event['message']
+
+        # Send message to WebSocket
+        self.send(text_data=json.dumps({
+            'type1' : type,
+            'message': message
+        }))

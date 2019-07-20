@@ -55,6 +55,7 @@
 
     #output-log {
         background-color: #39424e;
+        color: white;
     }
 
     .box {
@@ -107,13 +108,20 @@
         var data = JSON.parse(e.data);
         var type = data['type1'];
         var message = data['message'];
-        if ( type == 'chat_message'){
-            document.querySelector('#chat-log').value += (message + '\n');
+        if (type == 'chat_message') {
+            textarea = document.querySelector('#chat-log');
+            textarea.value += (message + '\n');
+            textarea.scrollTop = textarea.scrollHeight;
         }
-        else if(type == 'code_message'){
+        else if (type == 'code_message') {
             // document.querySelector('.ace_text-input').value=message;
             ab.getSession().setValue(message);
             // document.querySelector('#id_code').value = message;
+        }
+        else if (type == 'output_message') {
+            // document.querySelector('.ace_text-input').value=message;
+            // ab.getSession().setValue(message);
+            document.querySelector('#output-log').value = message;
         }
     };
 
@@ -138,11 +146,26 @@
         }
     };
 
-    document.querySelector('#chat-message-submit').onclick = function(e) {
+    document.querySelector('#chat-message-submit').onclick = function (e) {
         var messageInputDom = document.querySelector('#chat-message-input');
-        var message = messageInputDom.value;
+        var date = new Date();
+        var time = '';
+        var hh = date.getHours();
+        if (hh < 10) {
+            time = '0';
+        }
+        time = time + hh + ':';
+        if (date.getMinutes() < 10) {
+            time = time + '0';
+        }
+        time = time + date.getMinutes() + ':';
+        if (date.getSeconds() < 10) {
+            time = time + '0';
+        }
+        time = time + date.getSeconds();
+        var message = man + ' : ' + messageInputDom.value + '\n\t\t\t\t\t\t' + time;
         chatSocket.send(JSON.stringify({
-            'type' : 'chat_message',
+            'type': 'chat_message',
             'message': message
         }));
 
@@ -164,12 +187,16 @@
         $.ajax({
             url: "{% url 'compile_code' %}",
             type: "POST",
-            data : form.serialize(),
+            data: form.serialize(),
             dataType: 'json',
             success: function (data) {
                 console.log(data)
                 var out = data.output + data.status;
                 $('#output-log').val(out);
+                chatSocket.send(JSON.stringify({
+                    'type': 'output_message',
+                    'message': out
+                }));
             }
         });
     }
@@ -199,13 +226,13 @@
             // editor.getSession().setValue(textarea.val());
             editor.getSession().setMode("ace/mode/" + mode);
             editor.setTheme("ace/theme/idle_fingers");
-            
-            document.querySelector('.ace_text-input').onkeyup = function(e){
+
+            document.querySelector('.ace_text-input').onkeyup = function (e) {
                 // alert(e);
                 chatSocket.send(JSON.stringify({
-                    'type' : 'code_message',
+                    'type': 'code_message',
                     'message': editor.getSession().getValue()
-                })); 
+                }));
             };
             // editor.getSession().on("change", function () {
             //     textarea.val(editor.getSession().getValue());
@@ -217,16 +244,17 @@
             //         'message': textarea.val()
             //     })); 
             // });
+            $('#compileRun').click(function (e) {
+                textarea.val(editor.getSession().getValue());
+                createButton(e);
+                $('#codeform-submit').click(ajaxcall);
+                $('#codeform-submit').click();
+            });
         });
         // $('#compileRun').click(compileRun);
-        $('#compileRun').click(function(e){
-            textarea.val(editor.getSession().getValue());
-            createButton(e);
-            $('#codeform-submit').click(ajaxcall);
-            $('#codeform-submit').click();
-        });
+
     });
-    
+
 </script>
 
 </html>
