@@ -2,18 +2,16 @@
 
 <head>
   {% load widget_tweaks %} {% load static %}
-  <!-- Compiled and minified CSS -->
+  <title>SignUp - HackerRank</title>
+  <link rel="shortcut icon" href="{% static 'favicon.ico' %}" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-
-  <!-- Compiled and minified JavaScript -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </head>
 
 <body>
 
   <div id="login-box">
     <div class="left">
-      <a class="logo_name" href="{% url 'index' %}">HackerRank<img src="{% static 'green-char.png' %}"></a>
+      <a class="logo_name" href="{% url 'index' %}">HackerRank<img src="{% static 'green-char.png' %}"></a><br>
       <h1>Sign up</h1>
       <form method="POST">
         {% csrf_token %}
@@ -64,7 +62,7 @@
     position: relative;
     margin: 1% auto;
     width: 700px;
-    height: 700px;
+    height: 800px;
     background: #FFF;
     border-radius: 2px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
@@ -215,5 +213,5 @@
     background: rgb(117, 38, 27);
   }
 </style>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </html>
