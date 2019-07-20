@@ -217,14 +217,16 @@
             //         'message': textarea.val()
             //     })); 
             // });
-        });
-        // $('#compileRun').click(compileRun);
-        $('#compileRun').click(function(e){
+            $('#compileRun').click(function(e){
             textarea.val(editor.getSession().getValue());
             createButton(e);
             $('#codeform-submit').click(ajaxcall);
             $('#codeform-submit').click();
         });
+
+        });
+        // $('#compileRun').click(compileRun);
+        
     });
     
 </script>
