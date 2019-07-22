@@ -9,3 +9,15 @@ class InterviewList(models.Model):
     score = models.IntegerField(default=0)
     created_on = models.DateTimeField(default=datetime.now())
     active = models.BooleanField(default=True)
+
+class Room(models.Model):
+   roomname = models.TextField()
+   users = models.IntegerField(default=0)
+#    def __str__(self):
+#       return self.roomname
+
+class RoomMember(models.Model):
+   name = models.CharField(max_length=300)
+   room = models.ForeignKey(Room, on_delete=models.CASCADE)
+#    def __str__(self):
+    #   return self.room

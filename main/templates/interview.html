@@ -6,8 +6,11 @@
 
 <body>
     <div class='container'>
-        <div class='video box'>
+        <div class='video box' style="position: relative;">
             <p>Live Video</p>
+            <video id="local" autoplay muted></video>
+            <video id="remote" autoplay></video>
+
         </div>
         <div class='text box'>
             <p>Live Chat</p>
@@ -32,6 +35,24 @@
     </div>
 </body>
 <style>
+    #local {
+        position: absolute;
+        bottom: 0;
+        right: 7em;
+        height: 30%;
+        z-index: 1;
+    }
+
+    #remote {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+
+    }
+
     button {
         background-color: #26b061;
         color: white;
@@ -102,30 +123,286 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.5/ace.js"></script>
 <script>
+    var RTCPeerConnection = null;
+    var getUserMedia = null;
+    var attachMediaStream = null;
+    var reattachMediaStream = null;
+    var webrtcDetectedBrowser = null;
+
+    if (navigator.mozGetUserMedia) {
+        console.log("This appears to be Firefox");
+
+        webrtcDetectedBrowser = "firefox";
+
+        // The RTCPeerConnection object.
+        RTCPeerConnection = mozRTCPeerConnection;
+
+        // The RTCSessionDescription object.
+        RTCSessionDescription = mozRTCSessionDescription;
+
+        // The RTCIceCandidate object.
+        RTCIceCandidate = mozRTCIceCandidate;
+
+        // Get UserMedia (only difference is the prefix).
+        // Code from Adam Barth.
+        getUserMedia = navigator.mozGetUserMedia.bind(navigator);
+
+        // Attach a media stream to an element.
+        attachMediaStream = function (element, stream) {
+            console.log("Attaching media stream");
+            element.src = URL.createObjectURL(stream);;
+            element.play();
+        };
+
+        reattachMediaStream = function (to, from) {
+            console.log("Reattaching media stream");
+            to.mozSrcObject = from.mozSrcObject;
+            to.play();
+        };
+
+        // Fake get{Video,Audio}Tracks
+        MediaStream.prototype.getVideoTracks = function () {
+            return [];
+        };
+
+        MediaStream.prototype.getAudioTracks = function () {
+            return [];
+        };
+    } else if (navigator.webkitGetUserMedia) {
+        console.log("This appears to be Chrome");
+
+        webrtcDetectedBrowser = "chrome";
+
+        // The RTCPeerConnection object.
+        RTCPeerConnection = webkitRTCPeerConnection;
+
+        // Get UserMedia (only difference is the prefix).
+        // Code from Adam Barth.
+        getUserMedia = navigator.webkitGetUserMedia.bind(navigator);
+
+        // Attach a media stream to an element.
+        attachMediaStream = function (element, stream) {
+            element.src = webkitURL.createObjectURL(stream);
+        };
+
+        reattachMediaStream = function (to, from) {
+            to.src = from.src;
+        };
+
+        // The representation of tracks in a stream is changed in M26.
+        // Unify them for earlier Chrome versions in the coexisting period.
+        if (!webkitMediaStream.prototype.getVideoTracks) {
+            webkitMediaStream.prototype.getVideoTracks = function () {
+                return this.videoTracks;
+            };
+            webkitMediaStream.prototype.getAudioTracks = function () {
+                return this.audioTracks;
+            };
+        }
+
+        // New syntax of getXXXStreams method in M26.
+        if (!webkitRTCPeerConnection.prototype.getLocalStreams) {
+            webkitRTCPeerConnection.prototype.getLocalStreams = function () {
+                return this.localStreams;
+            };
+            webkitRTCPeerConnection.prototype.getRemoteStreams = function () {
+                return this.remoteStreams;
+            };
+        }
+    } else {
+        console.log("Browser does not appear to be WebRTC-capable");
+    }
+
+</script>
+<script>
     var user;
     var roomName = {{ room_name_json }};
     var man = {{ man }};
 
     var chatSocket = new WebSocket(
-        'ws://' + window.location.host +
+        'wss://' + window.location.host +
         '/interview/' + roomName);
+
+
+
+
+    var initiator;
+    var pc;
+
+    function initiatorCtrl(message) {
+        if (message == "initiator") {
+            initiator = false;
+            init();
+        }
+        if (message == "not initiator") {
+            initiator = true;
+            init();
+        }
+    }
+
+
+
+    function init() {
+        var constraints = {
+            audio: true,
+            video: true
+        };
+        getUserMedia(constraints, connect, fail);
+    }
+
+
+    function connect(stream) {
+        pc = new RTCPeerConnection(null);
+
+        if (stream) {
+            pc.addStream(stream);
+            $('#local').attachStream(stream);
+        }
+
+        pc.onaddstream = function (event) {
+            $('#remote').attachStream(event.stream);
+            logStreaming(true);
+        };
+        pc.onicecandidate = function (event) {
+            if (event.candidate) {
+
+                chatSocket.send(JSON.stringify({
+                    'type': 'video_message',
+                    'message': event.candidate
+                }));
+            }
+        };
+        chatSocket.onmessage = function (event) {
+
+            var data = JSON.parse(event.data);
+            var type = data['type'];
+            var message = data['message'];
+            if (type == 'chat_message') {
+                textarea = document.querySelector('#chat-log');
+                textarea.value += (message + '\n');
+                textarea.scrollTop = textarea.scrollHeight;
+            }
+            if (type == 'code_message') {
+                // if( message['user'] != '{{ user.username }}'){
+                ab.getSession().setValue(message['code']);
+                // }
+            }
+            if (type == 'output_message') {
+                document.querySelector('#output-log').value = message;
+            }
+
+            if (message['sdp']) {
+                if (initiator) {
+                    receiveAnswer(message);
+                } else {
+                    receiveOffer(message);
+                }
+            }
+            else if (message['candidate']) {
+                pc.addIceCandidate(new RTCIceCandidate(message));
+            }
+            else {
+                console.log('nothognskjdh')
+            }
+
+
+        };
+
+
+        if (initiator) {
+            createOffer();
+        } else {
+            log('waiting for offer...');
+        }
+        logStreaming(false);
+    }
+
+
+    function createOffer() {
+        log('creating offer...');
+        pc.createOffer(function (offer) {
+            log('created offer...');
+            pc.setLocalDescription(offer, function () {
+                log('sending to remote...');
+
+                chatSocket.send(JSON.stringify({
+                    'type': 'video_message',
+                    'message': offer
+                }));
+            }, fail);
+        }, fail);
+    }
+
+
+    function receiveOffer(offer) {
+        log('received offer...');
+        pc.setRemoteDescription(new RTCSessionDescription(offer), function () {
+            log('creating answer...');
+            pc.createAnswer(function (answer) {
+                log('created answer...');
+                pc.setLocalDescription(answer, function () {
+                    log('sent answer');
+
+                    chatSocket.send(JSON.stringify({
+                        'type': 'video_message',
+                        'message': answer
+                    }));
+                }, fail);
+            }, fail);
+        }, fail);
+    }
+
+
+    function receiveAnswer(answer) {
+        log('received answer');
+        pc.setRemoteDescription(new RTCSessionDescription(answer));
+    }
+
+
+    function log() {
+        $('#status').text(Array.prototype.join.call(arguments, ' '));
+        console.log.apply(console, arguments);
+    }
+
+
+    function logStreaming(streaming) {
+        $('#streaming').text(streaming ? '[streaming]' : '[..]');
+    }
+
+
+    function fail() {
+        $('#status').text(Array.prototype.join.call(arguments, ' '));
+        $('#status').addClass('error');
+        console.error.apply(console, arguments);
+    }
+
+
+    jQuery.fn.attachStream = function (stream) {
+        this.each(function () {
+            try {
+                this.srcObject = stream;
+            } catch (error) {
+                this.src = window.URL.createObjectURL(stream);
+            }
+            this.play();
+        });
+    };
+
+
+
+
+
+
+
+
+
 
     chatSocket.onmessage = function (e) {
         var data = JSON.parse(e.data);
-        var type = data['type1'];
+        var type = data['type'];
         var message = data['message'];
-        if (type == 'chat_message') {
-            textarea = document.querySelector('#chat-log');
-            textarea.value += (message + '\n');
-            textarea.scrollTop = textarea.scrollHeight;
-        }
-        else if(type == 'code_message'){
-            if( message['user'] != '{{ user.username }}'){
-                ab.getSession().setValue(message['code']);
-            }
-        }
-        else if (type == 'output_message') {
-            document.querySelector('#output-log').value = message;
+        if (type == 'video_start') {
+            initiatorCtrl(message)
         }
     };
 
@@ -137,7 +414,7 @@
     document.querySelector('#chat-message-input').onkeyup = function (e) {
         if (e.keyCode == 13) {
             var message = document.querySelector('#chat-message-input').value;
-            if(message != null && message.trim() !== '') {
+            if (message != null && message.trim() !== '') {
                 document.querySelector('#chat-message-submit').click();
             }
         }
@@ -202,7 +479,6 @@
     }
 
     var ab;
-    var cd;
     $(function () {
         $('#id_code').attr('data-editor', 'python');
         $('#id_code').attr('data-gutter', '1');
@@ -213,7 +489,7 @@
                 position: 'absolute',
                 width: textarea.width(),
                 height: textarea.height(),
-                'class': textarea.attr('class')     
+                'class': textarea.attr('class')
             }).insertBefore(textarea);
 
             textarea.css('display', 'none');
@@ -222,26 +498,25 @@
             editor.renderer.setShowGutter(textarea.data('gutter'));
             editor.getSession().setMode("ace/mode/" + mode);
             editor.setTheme("ace/theme/idle_fingers");
-            cd = $('.ace_text-input');
-            document.querySelector('.ace_text-input').onkeyup = function(e){
+            document.querySelector('.ace_text-input').onkeyup = function (e) {
                 user = '{{ user.username }}';
                 chatSocket.send(JSON.stringify({
-                    'type' : 'code_message',
+                    'type': 'code_message',
                     'message': {
                         'code': editor.getSession().getValue(),
                         'user': user
                     }
-                })); 
+                }));
             };
 
-            $('#compileRun').click(function(e){
-            textarea.val(editor.getSession().getValue());
-            createButton(e);
-            $('#codeform-submit').click(ajaxcall);
-            $('#codeform-submit').click();
+            $('#compileRun').click(function (e) {
+                textarea.val(editor.getSession().getValue());
+                createButton(e);
+                $('#codeform-submit').click(ajaxcall);
+                $('#codeform-submit').click();
+            });
         });
-        });
-        
+
     });
 
     function end_session() {
@@ -250,6 +525,11 @@
     function submit_code() {
         document.location.reload();
     }
+
+    window.onbeforeunload = function () {
+        return "Do you really want to leave our brilliant application?";
+
+    };
 </script>
 
 </html>
