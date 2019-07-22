@@ -8,6 +8,8 @@
     <div class='container'>
         <div class='video box'>
             <p>Live Video</p>
+            <video id="local" autoplay muted></video>
+            <video id="remote" autoplay ></video>
         </div>
         <div class='text box'>
             <p>Live Chat</p>
@@ -102,17 +104,159 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.5/ace.js"></script>
 <script>
+var RTCPeerConnection = null;
+    var getUserMedia = null;
+    var attachMediaStream = null;
+    var reattachMediaStream = null;
+    var webrtcDetectedBrowser = null;
+
+    if (navigator.mozGetUserMedia) {
+      console.log("This appears to be Firefox");
+
+      webrtcDetectedBrowser = "firefox";
+
+      // The RTCPeerConnection object.
+      RTCPeerConnection = mozRTCPeerConnection;
+
+      // The RTCSessionDescription object.
+      RTCSessionDescription = mozRTCSessionDescription;
+
+      // The RTCIceCandidate object.
+      RTCIceCandidate = mozRTCIceCandidate;
+
+      // Get UserMedia (only difference is the prefix).
+      // Code from Adam Barth.
+      getUserMedia = navigator.mozGetUserMedia.bind(navigator);
+
+      // Attach a media stream to an element.
+      attachMediaStream = function (element, stream) {
+        console.log("Attaching media stream");
+        element.src = URL.createObjectURL(stream);;
+        element.play();
+      };
+
+      reattachMediaStream = function (to, from) {
+        console.log("Reattaching media stream");
+        to.mozSrcObject = from.mozSrcObject;
+        to.play();
+      };
+
+      // Fake get{Video,Audio}Tracks
+      MediaStream.prototype.getVideoTracks = function () {
+        return [];
+      };
+
+      MediaStream.prototype.getAudioTracks = function () {
+        return [];
+      };
+    } else if (navigator.webkitGetUserMedia) {
+      console.log("This appears to be Chrome");
+
+      webrtcDetectedBrowser = "chrome";
+
+      // The RTCPeerConnection object.
+      RTCPeerConnection = webkitRTCPeerConnection;
+
+      // Get UserMedia (only difference is the prefix).
+      // Code from Adam Barth.
+      getUserMedia = navigator.webkitGetUserMedia.bind(navigator);
+
+      // Attach a media stream to an element.
+      attachMediaStream = function (element, stream) {
+        element.src = webkitURL.createObjectURL(stream);
+      };
+
+      reattachMediaStream = function (to, from) {
+        to.src = from.src;
+      };
+
+      // The representation of tracks in a stream is changed in M26.
+      // Unify them for earlier Chrome versions in the coexisting period.
+      if (!webkitMediaStream.prototype.getVideoTracks) {
+        webkitMediaStream.prototype.getVideoTracks = function () {
+          return this.videoTracks;
+        };
+        webkitMediaStream.prototype.getAudioTracks = function () {
+          return this.audioTracks;
+        };
+      }
+
+      // New syntax of getXXXStreams method in M26.
+      if (!webkitRTCPeerConnection.prototype.getLocalStreams) {
+        webkitRTCPeerConnection.prototype.getLocalStreams = function () {
+          return this.localStreams;
+        };
+        webkitRTCPeerConnection.prototype.getRemoteStreams = function () {
+          return this.remoteStreams;
+        };
+      }
+    } else {
+      console.log("Browser does not appear to be WebRTC-capable");
+    }
+
+</script>
+<script>
     var user;
     var roomName = {{ room_name_json }};
     var man = {{ man }};
 
     var chatSocket = new WebSocket(
-        'ws://' + window.location.host +
+        'wss://' + window.location.host +
         '/interview/' + roomName);
 
-    chatSocket.onmessage = function (e) {
-        var data = JSON.parse(e.data);
-        var type = data['type1'];
+
+
+
+    var initiator;
+    var pc;
+
+    function initiatorCtrl(message) {
+      if (message == "initiator") {
+        initiator = false;
+        init();
+      }
+      if (message == "not initiator") {
+        initiator = true;
+        init();
+      }
+    }
+
+
+
+    function init() {
+      var constraints = {
+        audio: true,
+        video: true
+      };
+      getUserMedia(constraints, connect, fail);
+    }
+
+
+    function connect(stream) {
+      pc = new RTCPeerConnection(null);
+
+      if (stream) {
+        pc.addStream(stream);
+        $('#local').attachStream(stream);
+      }
+
+      pc.onaddstream = function (event) {
+        $('#remote').attachStream(event.stream);
+        logStreaming(true);
+      };
+      pc.onicecandidate = function (event) {
+        if (event.candidate) {
+
+          chatSocket.send(JSON.stringify({
+            'type': 'video_message',
+            'message': event.candidate
+          }));
+        }
+      };
+      chatSocket.onmessage = function (event) {
+
+        var data = JSON.parse(event.data);
+        var type = data['type'];
         var message = data['message'];
         if (type == 'chat_message') {
             textarea = document.querySelector('#chat-log');
@@ -127,6 +271,134 @@
         else if (type == 'output_message') {
             document.querySelector('#output-log').value = message;
         }
+        // try{
+        // if (message['sdp']) {
+        //       if (initiator) {
+        //           receiveAnswer(message);
+        //       } else {
+        //           receiveOffer(message);
+        //       }
+        //   }
+        //   }
+        //   catch(e){
+        //   if (message['candidate']) {
+        //       pc.addIceCandidate(new RTCIceCandidate(message));
+        //   }
+        //   }
+
+        if (message['sdp']) {
+              if (initiator) {
+                  receiveAnswer(message);
+              } else {
+                  receiveOffer(message);
+              }
+          }
+         else if (message['candidate']) {
+              pc.addIceCandidate(new RTCIceCandidate(message));
+          }
+          else{
+              console.log('nothognskjdh')
+          }
+
+
+      };
+
+
+      if (initiator) {
+        createOffer();
+      } else {
+        log('waiting for offer...');
+      }
+      logStreaming(false);
+    }
+
+
+    function createOffer() {
+      log('creating offer...');
+      pc.createOffer(function (offer) {
+        log('created offer...');
+        pc.setLocalDescription(offer, function () {
+          log('sending to remote...');
+
+          chatSocket.send(JSON.stringify({
+            'type': 'video_message',
+            'message': offer
+          }));
+        }, fail);
+      }, fail);
+    }
+
+
+    function receiveOffer(offer) {
+      log('received offer...');
+      pc.setRemoteDescription(new RTCSessionDescription(offer), function () {
+        log('creating answer...');
+        pc.createAnswer(function (answer) {
+          log('created answer...');
+          pc.setLocalDescription(answer, function () {
+            log('sent answer');
+
+            chatSocket.send(JSON.stringify({
+              'type': 'video_message',
+              'message': answer
+            }));
+          }, fail);
+        }, fail);
+      }, fail);
+    }
+
+
+    function receiveAnswer(answer) {
+      log('received answer');
+      pc.setRemoteDescription(new RTCSessionDescription(answer));
+    }
+
+
+    function log() {
+      $('#status').text(Array.prototype.join.call(arguments, ' '));
+      console.log.apply(console, arguments);
+    }
+
+
+    function logStreaming(streaming) {
+      $('#streaming').text(streaming ? '[streaming]' : '[..]');
+    }
+
+
+    function fail() {
+      $('#status').text(Array.prototype.join.call(arguments, ' '));
+      $('#status').addClass('error');
+      console.error.apply(console, arguments);
+    }
+
+
+    jQuery.fn.attachStream = function (stream) {
+      this.each(function () {
+        try {
+          this.srcObject = stream;
+        } catch (error) {
+          this.src = window.URL.createObjectURL(stream);
+        }
+        this.play();
+      });
+    };
+
+
+
+
+
+
+
+
+
+
+    chatSocket.onmessage = function (e) {
+        var data = JSON.parse(e.data);
+        var type = data['type'];
+        var message = data['message'];
+        if (type == 'video_start') {
+        initiatorCtrl(message)
+      }
     };
 
     chatSocket.onclose = function (e) {

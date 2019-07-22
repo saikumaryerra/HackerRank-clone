@@ -38,7 +38,6 @@ class ChatConsumer(WebsocketConsumer):
             roommember = RoomMember.objects.create(room = room)
             roommember.name = self.channel_name
             roommember.save()
-            # room.rand = a;
             room.save()
             self.accept()
 
@@ -53,7 +52,7 @@ class ChatConsumer(WebsocketConsumer):
         #     self.channel_name
         # )
 
-        self.accept()
+        # self.accept()
 
     def disconnect(self, close_code):
         # Leave room group
@@ -82,13 +81,27 @@ class ChatConsumer(WebsocketConsumer):
         message = text_data_json['message']
 
         # Send message to room group
-        async_to_sync(self.channel_layer.group_send)(
-            self.room_group_name,
-            {
-                'type': type,
-                'message': message
-            }
-        )
+        # async_to_sync(self.channel_layer.group_send)(
+        #     self.room_group_name,
+        #     {
+        #         'type': type,
+        #         'message': message
+        #     }
+        # )
+
+        room=Room.objects.filter(roomname = self.room_group_name)[0]
+        roommembers = RoomMember.objects.filter( room = room)
+        for x in roommembers :
+            if x.name != self.channel_name:
+                async_to_sync(self.channel_layer.send)(
+                    x.name,
+                    {
+                        'type': type,
+                        'message': message
+                    }
+                )
+
+
 
     # Receive message from room group
     def chat_message(self, event):
@@ -97,7 +110,7 @@ class ChatConsumer(WebsocketConsumer):
 
         # Send message to WebSocket
         self.send(text_data=json.dumps({
-            'type1' : type,
+            'type' : type,
             'message': message
         }))
     
@@ -107,7 +120,7 @@ class ChatConsumer(WebsocketConsumer):
 
         # Send message to WebSocket
         self.send(text_data=json.dumps({
-            'type1' : type,
+            'type' : type,
             'message': message
         }))
     def output_message(self, event):
@@ -116,6 +129,16 @@ class ChatConsumer(WebsocketConsumer):
 
         # Send message to WebSocket
         self.send(text_data=json.dumps({
-            'type1' : type,
+            'type' : type,
+            'message': message
+        }))
+    
+    def video_message(self, event):
+        type = event['type']
+        message = event['message']
+
+        # Send message to WebSocket
+        self.send(text_data=json.dumps({
+            'type' : type,
             'message': message
         }))
