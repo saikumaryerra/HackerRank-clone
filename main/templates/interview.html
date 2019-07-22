@@ -250,6 +250,11 @@
     function submit_code() {
         document.location.reload();
     }
+
+    window.onbeforeunload = function() {
+    return "Do you really want to leave our brilliant application?";
+ 
+};
 </script>
 
 </html>
