@@ -45,6 +45,7 @@
         padding: 10px 50px;
         font-size: 24px;
         font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+        background-color: rgb(13, 110, 13);
         box-shadow: 0 4px 12px rgba(27, 169, 76, 0.5);
     }
 
@@ -126,6 +127,7 @@
 </style>
 
 <script>
+    var user_mail = {{ user_mail }};
 
     document.onkeydown = function (evt) {
         evt = evt || window.event;
@@ -137,24 +139,62 @@
         }
     };
 
-    // function hashCode(str) {
-    //     return str.split('').reduce((prevHash, currVal) =>
-    //         (((prevHash << 5) - prevHash) + currVal.charCodeAt(0)) | 0, 0);
-    // }
-
     document.querySelector('#candidate_mail').onkeyup = function (e) {
         if (e.keyCode == 13 || e.keyCode == 32) {
-            mail = document.querySelector('#candidate_mail').value;
-            window.location = "{% url 'interview' 98765432 %}";
+            var mail = document.querySelector('#candidate_mail').value;
+            $.ajax({
+                url: 'generate_interview/',
+                method: 'post',
+                data: {
+                    'candidate_mail': mail
+                },
+                dataType: 'json',
+                success: function (data) {
+                    hashValue = data.hashedValue;
+                    console.log("hashValue = " + hashValue);
+                    var url = "{% url 'interview' 123 %}".replace('123', hashValue);
+                    window.location = url;
+                }
+            });
         }
-    };
+    }
 
-    document.querySelector('#your_mail').onkeyup = function (e) {
-        if (e.keyCode == 13 || e.keyCode == 32) {
-            mail = document.querySelector('#your_mail').value;
-            window.location = "{% url 'interview' 98765432 %}";
-        }
-    };
+    function join_interview() {
+        $.ajax({
+            url: 'join_interview/',
+            method: 'get',
+            success: function (data) {
+                if (data.active == true) {
+                    hashValue = data.hashedValue;
+                    var url = "{% url 'interview' 123 %}".replace('123', hashValue);
+                    window.location = url;
+                }else{
+                    alert("No active interview running");
+                }
+            }
+        });
+    }
+
+    // document.querySelector('#your_mail').onkeyup = function (e) {
+    //     if (e.keyCode == 13 || e.keyCode == 32) {
+    //         var mail = document.querySelector('#your_mail').value;
+    //         $.ajax({
+    //             url: 'verify_mail/',
+    //             method: 'post',
+    //             data: {
+    //                 'mail': mail
+    //             },
+    //             dataType: 'json',
+    //             success: function (data) {
+    //                 if (data.registered) {
+    //                     window.location = "{% url 'login' %}";
+    //                 } else {
+    //                     window.location = "{% url 'signup' %}";
+    //                 }
+    //             }
+    //         });
+    //     }
+    // };
 
     function generate_interview() {
         document.querySelector('._1').style.display = 'block';
@@ -164,7 +204,7 @@
         document.querySelector('#candidate_mail').focus();
     }
 
-    function join_interview() {
+    function candidate_mail_input() {
         document.querySelector('._1').style.display = 'none';
         document.querySelector('._2').style.display = 'block';
         document.querySelector('.interviewer_quote').style.display = 'none';
@@ -172,4 +212,5 @@
         document.querySelector('#your_mail').focus();
     }
 </script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 {% endblock %}
