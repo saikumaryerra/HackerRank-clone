@@ -4,11 +4,12 @@ from datetime import datetime
 
 
 class InterviewList(models.Model):
-    interviewer = models.ForeignKey(User, on_delete=models.CASCADE)
-    candidate = models.CharField(max_length=30)
-    score = models.IntegerField(default=0)
-    created_on = models.DateTimeField(default=datetime.now())
-    active = models.BooleanField(default=True)
+   interviewer = models.ForeignKey(User, related_name= 'iv', on_delete=models.CASCADE)
+   candidate = models.ForeignKey(User, related_name= 'cd', on_delete=models.CASCADE)
+   score = models.IntegerField(default=0)
+   created_on = models.DateTimeField(default=datetime.now())
+   active = models.BooleanField(default=True)
+   link = models.CharField(max_length=256)
 
 class Room(models.Model):
    roomname = models.TextField()

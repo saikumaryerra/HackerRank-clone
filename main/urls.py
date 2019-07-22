@@ -7,5 +7,7 @@ urlpatterns = [
     path('interview/<interview_id>', views.interview, name='interview'),
     path('generate_interview/', views.generate_interview, name='generate_interview'),
     path('join_interview/', views.join_interview, name='join_interview'),
-    # path('verify_mail/', views.verify_mail, name='verify_mail'),
+    path('interview_list/', views.interview_list, name='interview_list'),
+    path('interview_list/deactivate_link/', views.deactivate_link, name='deactivate_link'),
+    path('interview/deactivate_link/', views.deactivate_link, name='deactivate_link'),
 ]

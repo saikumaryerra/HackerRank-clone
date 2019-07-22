@@ -12,7 +12,7 @@
     <div class="left">
       <a class="logo_name" href="{% url 'index' %}">HackerRank<img src="{% static 'green-char.png' %}"></a>
       <br>
-      <h1>Login</h1>
+      <h5>Login</h5>
       <form method="POST">
         {% csrf_token %}
         {% for field in form %}

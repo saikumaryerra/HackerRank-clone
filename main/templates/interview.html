@@ -2,6 +2,8 @@
 
 <head>
     <title>Interview</title>
+    {% load static %}
+    <link rel="shortcut icon" href="{% static 'favicon.ico' %}" />
 </head>
 
 <body>
@@ -223,9 +225,6 @@
         'wss://' + window.location.host +
         '/interview/' + roomName);
 
-
-
-
     var initiator;
     var pc;
 
@@ -240,8 +239,6 @@
         }
     }
 
-
-
     function init() {
         var constraints = {
             audio: true,
@@ -249,7 +246,6 @@
         };
         getUserMedia(constraints, connect, fail);
     }
-
 
     function connect(stream) {
         pc = new RTCPeerConnection(null);
@@ -301,11 +297,6 @@
             else if (message['candidate']) {
                 pc.addIceCandidate(new RTCIceCandidate(message));
             }
-            else {
-                console.log('nothognskjdh')
-            }
-
-
         };
 
 
@@ -387,15 +378,6 @@
             this.play();
         });
     };
-
-
-
-
-
-
-
-
-
 
     chatSocket.onmessage = function (e) {
         var data = JSON.parse(e.data);
@@ -520,7 +502,17 @@
     });
 
     function end_session() {
-        window.location = "{% url 'index' %}";
+        $.ajax({
+            url: 'deactivate_link/',
+            method: 'get',
+            data: {
+                'link': roomName
+            },
+            dataType: 'json',
+            success: function () {
+                window.location = "{% url 'interview_list' %}"
+            }
+        });
     }
     function submit_code() {
         document.location.reload();

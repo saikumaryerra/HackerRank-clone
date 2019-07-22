@@ -25,6 +25,7 @@
                 <ul class="[ nav navbar-nav navbar-right ]">
                     {% block nav %}{% endblock %}
                     {% if user.is_authenticated %}
+                    <li><a href="{% url 'interview_list' %}">Interview List</a></li>
                     <li><a href="{% url 'logout' %}">Logout</a></li>
                     {% else %}
                     <li><a href="{% url 'login' %}">Login</a></li>
@@ -36,6 +37,7 @@
         </div>
     </nav>
     <div class="extended_body">
+        <br>
         {% block body %}{% endblock %}
     </div>
 </body>

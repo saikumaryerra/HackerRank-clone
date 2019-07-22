@@ -11,13 +11,25 @@
     <div class='candidate_quote'>
         <h2>Want to get <b>hired?</b></h2>
     </div>
+    <div id="message" style="display:none;">
+        <span id='_401' style="display:none;">
+            <h2>Interview is still active. <a href="{% url 'interview_list' %}">click here</a> to visit</h2>
+        </span>
+        <span id='_403' style="display:none;">
+            <h2>You can't create interview for self</h2>
+        </span>
+        <span id='_404' style="display:none;">
+            <h2>Candidate's Email Not Found</h2>
+        </span>
+        <span id='_500' style="display:none;">
+            <h2>Server Error</h2>
+        </span>
+        <button class="btn-success" onclick="ok_click()">
+            <b>OK</b></button>
+    </div>
     <div class="email_container _1">
         <input type='email' class='email_field' id='candidate_mail'
             placeholder="Enter Candidate's Mail Id..     or Press ESC to close">
-    </div>
-    <div class="email_container _2">
-        <input type='email' class='email_field' id='your_mail'
-            placeholder="Enter Your Mail Id..     or Press ESC to close">
     </div>
     <div class="generate_container">
         {% if user.is_authenticated %}
@@ -66,6 +78,12 @@
         line-height: 48px;
     }
 
+    #message {
+        text-align: center;
+        grid-column: 1 / span 2;
+        grid-row: 2 / span 1;
+    }
+
     .email_container {
         text-align: center;
         border-radius: 5px;
@@ -88,10 +106,6 @@
     }
 
     ._1 {
-        display: none;
-    }
-
-    ._2 {
         display: none;
     }
 
@@ -133,7 +147,6 @@
         evt = evt || window.event;
         if (evt.keyCode == 27) { // 27 is for Escape/ 'ESC' button
             document.querySelector('._1').style.display = 'none';
-            document.querySelector('._2').style.display = 'none';
             document.querySelector('.interviewer_quote').style.display = 'block';
             document.querySelector('.candidate_quote').style.display = 'block';
         }
@@ -150,13 +163,34 @@
                 },
                 dataType: 'json',
                 success: function (data) {
-                    hashValue = data.hashedValue;
-                    console.log("hashValue = " + hashValue);
-                    var url = "{% url 'interview' 123 %}".replace('123', hashValue);
-                    window.location = url;
+                    if (data.signal == 404) {
+                        document.querySelector('#message').style.display = 'block';
+                        document.querySelector('#_404').style.display = 'block';
+                        document.querySelector('.home_text').style.display = 'none';
+                    } else if (data.signal == 403) {
+                        document.querySelector('#message').style.display = 'block';
+                        document.querySelector('#_403').style.display = 'block';
+                        document.querySelector('.home_text').style.display = 'none';
+                    } else if (data.signal == 401) {
+                        document.querySelector('#message').style.display = 'block';
+                        document.querySelector('#_401').style.display = 'block';
+                        document.querySelector('.home_text').style.display = 'none';
+                    } else if (data.signal == 200) {
+                        link = data.interview_link;
+                        var url = "{% url 'interview' 123 %}".replace('123', link);
+                        window.location = url;
+                    }
                 }
             });
         }
+    }
+
+    function ok_click() {
+        document.querySelector('#message').style.display = 'none';
+        document.querySelector('#_404').style.display = 'none';
+        document.querySelector('#_403').style.display = 'none';
+        document.querySelector('#_401').style.display = 'none';
+        document.querySelector('.home_text').style.display = 'block';
     }
 
     function join_interview() {
@@ -164,53 +198,22 @@
             url: 'join_interview/',
             method: 'get',
             success: function (data) {
-                if (data.active == true) {
-                    hashValue = data.hashedValue;
-                    var url = "{% url 'interview' 123 %}".replace('123', hashValue);
-                    window.location = url;
-                }else{
+                if (data.active) {
+                    window.location = "{% url 'interview_list' %}"
+                } else {
                     alert("No active interview running");
                 }
             }
         });
     }
 
-    // document.querySelector('#your_mail').onkeyup = function (e) {
-    //     if (e.keyCode == 13 || e.keyCode == 32) {
-    //         var mail = document.querySelector('#your_mail').value;
-    //         $.ajax({
-    //             url: 'verify_mail/',
-    //             method: 'post',
-    //             data: {
-    //                 'mail': mail
-    //             },
-    //             dataType: 'json',
-    //             success: function (data) {
-    //                 if (data.registered) {
-    //                     window.location = "{% url 'login' %}";
-    //                 } else {
-    //                     window.location = "{% url 'signup' %}";
-    //                 }
-    //             }
-    //         });
-    //     }
-    // };
-
     function generate_interview() {
         document.querySelector('._1').style.display = 'block';
-        document.querySelector('._2').style.display = 'none';
         document.querySelector('.interviewer_quote').style.display = 'none';
         document.querySelector('.candidate_quote').style.display = 'none';
         document.querySelector('#candidate_mail').focus();
     }
 
-    function candidate_mail_input() {
-        document.querySelector('._1').style.display = 'none';
-        document.querySelector('._2').style.display = 'block';
-        document.querySelector('.interviewer_quote').style.display = 'none';
-        document.querySelector('.candidate_quote').style.display = 'none';
-        document.querySelector('#your_mail').focus();
-    }
 </script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 {% endblock %}
