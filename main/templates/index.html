@@ -1,9 +1,43 @@
 {% extends 'layout.html' %}
+{% block nav %}
+{% if user.is_authenticated %}
+<li style="text-transform: uppercase;"><a style="color:black;"><b>{{ name }}</b></a></li>
+{% endif %}
+{% endblock %}
+                    
 {% block body %}
 <br><br>
 <div class="body_container">
-    <div class="generate_button_container">
-        <h2>Join over 5 developers and interviewers.<br>Generate link for interviews, and start hiring.<br></h2>
+    <div class="home_text">
+        <h1>Join over <b>5 developers</b> and interviewers.<br>Generate link for interviews, and start hiring.</h1>
+    </div>
+    <div class='interviewer_quote'>
+        <h2>Want to <b>hire?</b></h2>
+    </div>
+    <div class='candidate_quote'>
+        <h2>Want to get <b>hired?</b></h2>
+    </div>
+    <div id="message" style="display:none;">
+        <span id='_401' style="display:none;">
+            <h2>Interview is still active. <a href="{% url 'interview_list' %}">click here</a> to visit</h2>
+        </span>
+        <span id='_403' style="display:none;">
+            <h2>You can't create interview for self</h2>
+        </span>
+        <span id='_404' style="display:none;">
+            <h2>Candidate's Email Not Found</h2>
+        </span>
+        <span id='_404_2' style="display:none;">
+            <h2>No Active Interview Found</h2>
+        </span>
+        <button class="btn-success" onclick="ok_click()">
+            <b>OK</b></button>
+    </div>
+    <div class="email_container _1">
+        <input type='email' class='email_field' id='candidate_mail'
+            placeholder="Enter Candidate's Mail Id..     or Press ESC to close">
+    </div>
+    <div class="generate_container">
         {% if user.is_authenticated %}
         <h4><button class="btn button btn-success" onclick="generate_interview()">
                 <b>Generate Interview</b></button>
@@ -13,8 +47,15 @@
             </h4>
             {% endif %}
     </div>
-    <div class="email_container">
-        <input id='email_field' type='text/email' placeholder="Enter Candidate's Mail Id..">
+    <div class="join_container">
+        {% if user.is_authenticated %}
+        <h4><button class="btn button btn-success" onclick="join_interview()">
+                <b>Join Interview</b></button>
+            {% else %}
+            <h4><a class="btn button btn-success" href="{% url 'login' %}">
+                    <b>Join Interview</b></a>
+            </h4>
+            {% endif %}
     </div>
 </div>
 <style>
@@ -22,62 +63,166 @@
         padding: 10px 50px;
         font-size: 24px;
         font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+        background-color: rgb(13, 110, 13);
         box-shadow: 0 4px 12px rgba(27, 169, 76, 0.5);
     }
 
     .body_container {
         display: grid;
-        grid-template-columns: auto;
-        grid-template-rows: 1fr 1fr 1fr;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 5fr 4fr 2fr;
     }
 
-    .generate_button_container {
+    .home_text {
         text-align: center;
+        grid-column: 1 / span 2;
+        grid-row: 2 / span 1;
+    }
+
+    .home_text h1 {
+        font-family: Verdana, Geneva, Tahoma, sans-serif;
+        line-height: 48px;
+    }
+
+    #message {
+        text-align: center;
+        grid-column: 1 / span 2;
         grid-row: 2 / span 1;
     }
 
     .email_container {
-        display: none;
         text-align: center;
         border-radius: 5px;
-        background-color: #f2f2f2;
         padding: 20px;
+        grid-column: 1 / span 2;
         grid-row: 3 / span 1;
     }
 
-    #email_field {
+    .email_field {
+        display: inline-block;
         width: 60%;
         padding: 12px 20px;
         margin: 8px 0;
         text-align: center;
-        display: inline-block;
+        color: black;
         border: 1px solid #ccc;
         border-radius: 4px;
         box-sizing: border-box;
+        box-shadow: 0 4px 12px rgba(27, 169, 76, 0.5);
+    }
+
+    ._1 {
+        display: none;
+    }
+
+    .interviewer_quote {
+        display: block;
+        text-align: center;
+        border-radius: 5px;
+        padding: 20px;
+        grid-column: 1 / span 1;
+        grid-row: 3 / span 1;
+    }
+
+    .candidate_quote {
+        display: block;
+        text-align: center;
+        border-radius: 5px;
+        padding: 20px;
+        grid-column: 2 / span 1;
+        grid-row: 3 / span 1;
+    }
+
+    .generate_container {
+        text-align: center;
+        grid-column: 1 / span 1;
+        grid-row: 4 / span 1;
+    }
+
+    .join_container {
+        text-align: center;
+        grid-column: 2 / span 1;
+        grid-row: 4 / span 1;
     }
 </style>
+
 <script>
-    document.querySelector('#email_field').onkeyup = function (e) {
-        if (e.keyCode == 13) {
-            // var mail = document.querySelector('#email_field').value;
-            // // alert('{{user.get_username}}' + mail);
-            // var arg = hashCode(mail);
-            // var a = window.location.host + '/interview/';
-            // var url = a.concat(arg.toString());
-            // alert(url)
-            // window.location = url.toString();
-            window.location = "{% url 'interview' 765587 %}";
+    var user_mail = {{ user_mail }};
+
+    document.onkeydown = function (evt) {
+        evt = evt || window.event;
+        if (evt.keyCode == 27) { // 27 is for Escape/ 'ESC' button
+            document.querySelector('._1').style.display = 'none';
+            document.querySelector('.interviewer_quote').style.display = 'block';
+            document.querySelector('.candidate_quote').style.display = 'block';
         }
     };
 
-    function hashCode(str) {
-        return str.split('').reduce((prevHash, currVal) =>
-        (((prevHash << 5) - prevHash) + currVal.charCodeAt(0))|0, 0);
+    document.querySelector('#candidate_mail').onkeyup = function (e) {
+        if (e.keyCode == 13 || e.keyCode == 32) {
+            var mail = document.querySelector('#candidate_mail').value;
+            $.ajax({
+                url: 'generate_interview/',
+                method: 'post',
+                data: {
+                    'candidate_mail': mail
+                },
+                dataType: 'json',
+                success: function (data) {
+                    if (data.signal == 404) {
+                        document.querySelector('#message').style.display = 'block';
+                        document.querySelector('#_404').style.display = 'block';
+                        document.querySelector('.home_text').style.display = 'none';
+                    } else if (data.signal == 403) {
+                        document.querySelector('#message').style.display = 'block';
+                        document.querySelector('#_403').style.display = 'block';
+                        document.querySelector('.home_text').style.display = 'none';
+                    } else if (data.signal == 401) {
+                        document.querySelector('#message').style.display = 'block';
+                        document.querySelector('#_401').style.display = 'block';
+                        document.querySelector('.home_text').style.display = 'none';
+                    } else if (data.signal == 200) {
+                        link = data.interview_link;
+                        var url = "{% url 'interview' 123 %}".replace('123', link);
+                        window.location = url;
+                    }
+                }
+            });
+        }
+    }
+
+    function ok_click() {
+        document.querySelector('#message').style.display = 'none';
+        document.querySelector('#_404').style.display = 'none';
+        document.querySelector('#_403').style.display = 'none';
+        document.querySelector('#_401').style.display = 'none';
+        document.querySelector('#_404_2').style.display = 'none';
+        document.querySelector('.home_text').style.display = 'block';
+    }
+
+    function join_interview() {
+        $.ajax({
+            url: 'join_interview/',
+            method: 'get',
+            success: function (data) {
+                if (data.active) {
+                    window.location = "{% url 'interview_list' %}"
+                } else {
+                    document.querySelector('#message').style.display = 'block';
+                    document.querySelector('#_404_2').style.display = 'block';
+                    document.querySelector('.home_text').style.display = 'none';
+                }
+            }
+        });
     }
 
     function generate_interview() {
-        document.querySelector('.email_container').style.display = 'block';
-        document.querySelector('#email_field').focus();
+        document.querySelector('._1').style.display = 'block';
+        document.querySelector('.interviewer_quote').style.display = 'none';
+        document.querySelector('.candidate_quote').style.display = 'none';
+        document.querySelector('#candidate_mail').focus();
     }
+
 </script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 {% endblock %}

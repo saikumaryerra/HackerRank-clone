@@ -1,0 +1,147 @@
+{% extends 'layout.html' %}
+{% block title %}Interview List - {% endblock %}
+{% block body %}<br>
+<div class='title_text'>Interview List</div>
+<div class='title_text'>{{name}}</div>
+<hr>
+{% if not total %}
+<div class='list'>
+    <ul class="cards">
+        <li class="card no_data">
+            <button class="btn">
+                <div class="card_title">No Interview Found</div>
+            </button>
+        </li>
+    </ul>
+</div>
+{% endif %}
+{% for data in links %}
+{% if data.active == True %}
+<ul class="cards">
+    <li class="card active">
+        <button class="btn" onclick="interview_link('{{data.link}}')">
+            <div class="card_title">Created By: {{ data.interviewer }}
+                <br>Candidate: {{ data.candidate }}
+                <br> Status: <i>Active</i>  Time (UTC): {{ data.created_on }}
+                <br>Interview Id : {{ data.link }}
+            </div>
+            <button class='close_button' onclick="deactivate_link('{{data.link}}')">X</button>
+        </button>
+    </li>
+</ul>
+{% endif %}
+{% endfor %}
+
+{% for data in links %}
+{% if data.active == False %}
+<ul class="cards">
+    <li class="card inactive">
+        <div class="btn">
+            <div class="card_title">Created By: {{ data.interviewer }}
+                <br>Candidate: {{ data.candidate }}
+                <br> Status: <i>Deactivated</i> Time: {{ data.created_on }}
+                <br>Interview Id : {{ data.link }}
+            </div>
+        </div>
+    </li>
+</ul>
+{% endif %}
+{% endfor %}
+
+<script>
+    function deactivate_link(link) {
+        $.ajax({
+            url: 'deactivate_link/',
+            method: 'get',
+            data: {
+                'link': link
+            },
+            dataType: 'json',
+            success: function () {
+                window.location = "{% url 'interview_list' %}"
+            }
+        });
+    }
+
+
+    function interview_link(link) {
+        var url = "{% url 'interview' 123 %}".replace('123', link);
+        window.location = url;
+    }
+
+</script>
+<style>
+    .list {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        align-items: center;
+    }
+
+    .title_text {
+        width: 100%;
+        text-align: center;
+        font-weight: 800;
+        font-size: 2rem;
+        color: black;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    .btn {
+        display: block;
+        width: 100%;
+        background-color: white;
+        border: 1px solid gray-light;
+        border-radius: 1rem;
+        color: gray-dark;
+        padding: 0.5rem;
+    }
+
+    .cards {
+        width: 95%;
+        display: flex;
+        text-align: center;
+        flex-flow: column wrap;
+        list-style: none;
+    }
+
+    .card {
+        background-color: white;
+        border-radius: 0.25rem;
+        display: flex;
+        flex-direction: row;
+        overflow: hidden;
+        padding: 10px;
+        margin: 5px;
+    }
+
+    .no_data {
+        box-shadow: 0px 10px 20px 0px rgba(0, 0, 0, 0.418);
+    }
+
+    .active {
+        box-shadow: 0px 10px 20px 0px rgba(48, 253, 29, 0.418);
+    }
+
+    .inactive {
+        box-shadow: 0px 10px 20px 0px rgba(252, 0, 0, 0.678);
+    }
+
+    .card_title {
+        color: gray-dark;
+        font-size: 1.25rem;
+        font-weight: 300;
+        color: black;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    .close_button {
+        color: white;
+        background-color: rgba(255, 0, 0, 0.788);
+        width: 30px;
+    }
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+{% endblock %}

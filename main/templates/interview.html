@@ -2,48 +2,74 @@
 
 <head>
     <title>Interview</title>
+    {% load static %}
+    <link rel="shortcut icon" href="{% static 'favicon.ico' %}" />
 </head>
 
 <body>
     <div class='container'>
-        <div class='video box'>
-            <p>Interview Id: {{ room_name }}, Live Video Chat</p>
+        <div class='video box' style="position: relative;">
+            <p>Live Video</p>
+            <video id="local" autoplay muted></video>
+            <video id="remote" autoplay></video>
+
         </div>
         <div class='text box'>
-            <p>Live Chat</p>
-            <textarea id="chat-log" cols="59" rows="9"></textarea><br />
+            <p>Live Chat  [ You: {{name}} ]</p>
+
+            <textarea id="chat-log" cols="59" rows="10" readonly></textarea><br />
             <input id="chat-message-input" type="text" size="59" /><br />
             <input style="display:none;" id="chat-message-submit" type="button" value="Send" />
         </div>
         <div class='code box'>
-            <!-- <p>Coding Area</p> -->
             <form method="POST" id="codeform">
                 {% csrf_token %}
                 {{form.as_p}}
-                <!-- <button id="codeform-submit" type="submit">complie</button> -->
             </form>
         </div>
         <div class='output box'>
-            <p>Output Screen</p>
-            <textarea id="output-log" cols="102" rows="10"></textarea><br />
+            <p>Output Screen [Interview Id: {{ room_name }}]</p>
+            <textarea id="output-log" cols="100" rows="11" readonly></textarea><br />
         </div>
-        <button>End session</button>
-        <button type='submit'>Submit</button>
+        <button onclick="end_session()">End session</button>
+        <button onclick="submit_code()" type='submit'>Submit</button>
         <button type='submit' id="compileRun">Compile and Run</button>
-
     </div>
 </body>
 <style>
+    #local {
+        position: absolute;
+        bottom: 0;
+        right: 7em;
+        height: 30%;
+        z-index: 1;
+    }
+
+    #remote {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+
+    }
+
     button {
         background-color: #26b061;
         color: white;
+        padding: 15px 5px;
+        text-align: center;
+        font-size: 16px;
+        line-height: 6px;
+        font-weight: 700;
     }
 
     .container {
         display: grid;
         grid-gap: 5px;
-        grid-template-columns: 500px 400px 440px;
-        grid-template-rows: 300px 200px 20px;
+        grid-template-columns: 500px 400px 420px;
+        grid-template-rows: 375px 200px 20px;
         background-color: #fff;
         color: #444;
     }
@@ -55,6 +81,7 @@
 
     #output-log {
         background-color: #39424e;
+        color: white;
     }
 
     .box {
@@ -67,7 +94,10 @@
 
     p {
         font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-        font-size: 11px;
+        font-size: 14px;
+        margin: 0px;
+        padding: 0px;
+        padding-bottom: 2px;
     }
 
     .video {
@@ -95,25 +125,265 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.5/ace.js"></script>
 <script>
+    var RTCPeerConnection = null;
+    var getUserMedia = null;
+    var attachMediaStream = null;
+    var reattachMediaStream = null;
+    var webrtcDetectedBrowser = null;
+
+    if (navigator.mozGetUserMedia) {
+        console.log("This appears to be Firefox");
+
+        webrtcDetectedBrowser = "firefox";
+
+        // The RTCPeerConnection object.
+        RTCPeerConnection = mozRTCPeerConnection;
+
+        // The RTCSessionDescription object.
+        RTCSessionDescription = mozRTCSessionDescription;
+
+        // The RTCIceCandidate object.
+        RTCIceCandidate = mozRTCIceCandidate;
+
+        // Get UserMedia (only difference is the prefix).
+        // Code from Adam Barth.
+        getUserMedia = navigator.mozGetUserMedia.bind(navigator);
+
+        // Attach a media stream to an element.
+        attachMediaStream = function (element, stream) {
+            console.log("Attaching media stream");
+            element.src = URL.createObjectURL(stream);;
+            element.play();
+        };
+
+        reattachMediaStream = function (to, from) {
+            console.log("Reattaching media stream");
+            to.mozSrcObject = from.mozSrcObject;
+            to.play();
+        };
+
+        // Fake get{Video,Audio}Tracks
+        MediaStream.prototype.getVideoTracks = function () {
+            return [];
+        };
+
+        MediaStream.prototype.getAudioTracks = function () {
+            return [];
+        };
+    } else if (navigator.webkitGetUserMedia) {
+        console.log("This appears to be Chrome");
+
+        webrtcDetectedBrowser = "chrome";
+
+        // The RTCPeerConnection object.
+        RTCPeerConnection = webkitRTCPeerConnection;
+
+        // Get UserMedia (only difference is the prefix).
+        // Code from Adam Barth.
+        getUserMedia = navigator.webkitGetUserMedia.bind(navigator);
+
+        // Attach a media stream to an element.
+        attachMediaStream = function (element, stream) {
+            element.src = webkitURL.createObjectURL(stream);
+        };
+
+        reattachMediaStream = function (to, from) {
+            to.src = from.src;
+        };
+
+        // The representation of tracks in a stream is changed in M26.
+        // Unify them for earlier Chrome versions in the coexisting period.
+        if (!webkitMediaStream.prototype.getVideoTracks) {
+            webkitMediaStream.prototype.getVideoTracks = function () {
+                return this.videoTracks;
+            };
+            webkitMediaStream.prototype.getAudioTracks = function () {
+                return this.audioTracks;
+            };
+        }
+
+        // New syntax of getXXXStreams method in M26.
+        if (!webkitRTCPeerConnection.prototype.getLocalStreams) {
+            webkitRTCPeerConnection.prototype.getLocalStreams = function () {
+                return this.localStreams;
+            };
+            webkitRTCPeerConnection.prototype.getRemoteStreams = function () {
+                return this.remoteStreams;
+            };
+        }
+    } else {
+        console.log("Browser does not appear to be WebRTC-capable");
+    }
+
+</script>
+<script>
+    var user;
     var roomName = {{ room_name_json }};
     var man = {{ man }};
-    console.log('Room name = ' + roomName);
 
     var chatSocket = new WebSocket(
         'ws://' + window.location.host +
         '/interview/' + roomName);
 
+    var initiator;
+    var pc;
+
+    function initiatorCtrl(message) {
+        if (message == "initiator") {
+            initiator = false;
+            init();
+        }
+        if (message == "not initiator") {
+            initiator = true;
+            init();
+        }
+    }
+
+    function init() {
+        var constraints = {
+            audio: true,
+            video: true
+        };
+        getUserMedia(constraints, connect, fail);
+    }
+
+    function connect(stream) {
+        pc = new RTCPeerConnection(null);
+
+        if (stream) {
+            pc.addStream(stream);
+            $('#local').attachStream(stream);
+        }
+
+        pc.onaddstream = function (event) {
+            $('#remote').attachStream(event.stream);
+            logStreaming(true);
+        };
+        pc.onicecandidate = function (event) {
+            if (event.candidate) {
+
+                chatSocket.send(JSON.stringify({
+                    'type': 'video_message',
+                    'message': event.candidate
+                }));
+            }
+        };
+        chatSocket.onmessage = function (event) {
+            var data = JSON.parse(event.data);
+            var type = data['type'];
+            var message = data['message'];
+            if (type == 'chat_message') {
+                textarea = document.querySelector('#chat-log');
+                textarea.value += (message + '\n');
+                textarea.scrollTop = textarea.scrollHeight;
+            }
+            if (type == 'code_message') {
+                // if( message['user'] != '{{ user.username }}'){
+                ab.getSession().setValue(message['code']);
+                // }
+            }
+            if (type == 'output_message') {
+                document.querySelector('#output-log').value = message;
+            }
+
+            if (message['sdp']) {
+                if (initiator) {
+                    receiveAnswer(message);
+                } else {
+                    receiveOffer(message);
+                }
+            }
+            else if (message['candidate']) {
+                pc.addIceCandidate(new RTCIceCandidate(message));
+            }
+        };
+
+
+        if (initiator) {
+            createOffer();
+        } else {
+            log('waiting for offer...');
+        }
+        logStreaming(false);
+    }
+
+
+    function createOffer() {
+        log('creating offer...');
+        pc.createOffer(function (offer) {
+            log('created offer...');
+            pc.setLocalDescription(offer, function () {
+                log('sending to remote...');
+
+                chatSocket.send(JSON.stringify({
+                    'type': 'video_message',
+                    'message': offer
+                }));
+            }, fail);
+        }, fail);
+    }
+
+
+    function receiveOffer(offer) {
+        log('received offer...');
+        pc.setRemoteDescription(new RTCSessionDescription(offer), function () {
+            log('creating answer...');
+            pc.createAnswer(function (answer) {
+                log('created answer...');
+                pc.setLocalDescription(answer, function () {
+                    log('sent answer');
+
+                    chatSocket.send(JSON.stringify({
+                        'type': 'video_message',
+                        'message': answer
+                    }));
+                }, fail);
+            }, fail);
+        }, fail);
+    }
+
+
+    function receiveAnswer(answer) {
+        log('received answer');
+        pc.setRemoteDescription(new RTCSessionDescription(answer));
+    }
+
+
+    function log() {
+        $('#status').text(Array.prototype.join.call(arguments, ' '));
+        console.log.apply(console, arguments);
+    }
+
+
+    function logStreaming(streaming) {
+        $('#streaming').text(streaming ? '[streaming]' : '[..]');
+    }
+
+
+    function fail() {
+        $('#status').text(Array.prototype.join.call(arguments, ' '));
+        $('#status').addClass('error');
+        console.error.apply(console, arguments);
+    }
+
+
+    jQuery.fn.attachStream = function (stream) {
+        this.each(function () {
+            try {
+                this.srcObject = stream;
+            } catch (error) {
+                this.src = window.URL.createObjectURL(stream);
+            }
+            this.play();
+        });
+    };
+
     chatSocket.onmessage = function (e) {
         var data = JSON.parse(e.data);
-        var type = data['type1'];
+        var type = data['type'];
         var message = data['message'];
-        if ( type == 'chat_message'){
-            document.querySelector('#chat-log').value += (message + '\n');
-        }
-        else if(type == 'code_message'){
-            // document.querySelector('.ace_text-input').value=message;
-            ab.getSession().setValue(message);
-            // document.querySelector('#id_code').value = message;
+        if (type == 'video_start') {
+            initiatorCtrl(message)
         }
     };
 
@@ -121,30 +391,42 @@
         console.error('Chat socket closed unexpectedly');
     };
 
-    // document.querySelector('#id_code').onkeyup = function(e) {
-    //     var codeInputDom = document.querySelector('#code-input');
-    //     var code = codeInputDom.value;
-    //     chatSocket.send(JSON.stringify({
-    //         'type' : 'code_message',
-    //         'message': code
-    //     }));    
-    // };
-
     document.querySelector('#chat-message-input').focus();
     document.querySelector('#chat-message-input').onkeyup = function (e) {
         if (e.keyCode == 13) {
             var message = document.querySelector('#chat-message-input').value;
-            document.querySelector('#chat-message-submit').click();
+            if (message != null && message.trim() !== '') {
+                document.querySelector('#chat-message-submit').click();
+            }
         }
     };
 
-    document.querySelector('#chat-message-submit').onclick = function(e) {
+    document.querySelector('#chat-message-submit').onclick = function (e) {
         var messageInputDom = document.querySelector('#chat-message-input');
-        var message = messageInputDom.value;
+        var date = new Date();
+        var time = '';
+        var hh = date.getHours();
+        if (hh < 10) {
+            time = '0';
+        }
+        time = time + hh + ':';
+        if (date.getMinutes() < 10) {
+            time = time + '0';
+        }
+        time = time + date.getMinutes() + ':';
+        if (date.getSeconds() < 10) {
+            time = time + '0';
+        }
+        time = time + date.getSeconds();
+        var message = man + ' : ' + messageInputDom.value + '\n\t\t\t\t\t\t' + time;
         chatSocket.send(JSON.stringify({
-            'type' : 'chat_message',
+            'type': 'chat_message',
             'message': message
         }));
+
+        textarea = document.querySelector('#chat-log');
+        textarea.value += (message + '\n');
+        textarea.scrollTop = textarea.scrollHeight;
 
         messageInputDom.value = '';
     };
@@ -158,18 +440,20 @@
     }
     function ajaxcall(e) {
         e.preventDefault();
-        // code = $('#id_code').val()
-        console.log('sai')
         var form = $('#id_code').closest("form")
         $.ajax({
             url: "{% url 'compile_code' %}",
             type: "POST",
-            data : form.serialize(),
+            data: form.serialize(),
             dataType: 'json',
             success: function (data) {
                 console.log(data)
                 var out = data.output + data.status;
                 $('#output-log').val(out);
+                chatSocket.send(JSON.stringify({
+                    'type': 'output_message',
+                    'message': out
+                }));
             }
         });
     }
@@ -192,21 +476,24 @@
                 height: textarea.height(),
                 'class': textarea.attr('class')
             }).insertBefore(textarea);
+
             textarea.css('display', 'none');
             var editor = ace.edit(editDiv[0]);
             ab = editor;
             editor.renderer.setShowGutter(textarea.data('gutter'));
-            // editor.getSession().setValue(textarea.val());
             editor.getSession().setMode("ace/mode/" + mode);
             editor.setTheme("ace/theme/idle_fingers");
-            
-            document.querySelector('.ace_text-input').onkeyup = function(e){
-                // alert(e);
+            document.querySelector('.ace_text-input').onkeyup = function (e) {
+                user = '{{ user.username }}';
                 chatSocket.send(JSON.stringify({
-                    'type' : 'code_message',
-                    'message': editor.getSession().getValue()
-                })); 
+                    'type': 'code_message',
+                    'message': {
+                        'code': editor.getSession().getValue(),
+                        'user': user
+                    }
+                }));
             };
+<<<<<<< HEAD
             // editor.getSession().on("change", function () {
             //     textarea.val(editor.getSession().getValue());
             // });
@@ -222,13 +509,66 @@
             createButton(e);
             $('#codeform-submit').click(ajaxcall);
             $('#codeform-submit').click();
+||||||| merged common ancestors
+            // editor.getSession().on("change", function () {
+            //     textarea.val(editor.getSession().getValue());
+            // });
+
+            // textarea.on("change",function(){
+            //     chatSocket.send(JSON.stringify({
+            //         'type' : 'code_message',
+            //         'message': textarea.val()
+            //     })); 
+            // });
         });
+        // $('#compileRun').click(compileRun);
+        $('#compileRun').click(function(e){
+            textarea.val(editor.getSession().getValue());
+            createButton(e);
+            $('#codeform-submit').click(ajaxcall);
+            $('#codeform-submit').click();
+=======
+
+            $('#compileRun').click(function (e) {
+                textarea.val(editor.getSession().getValue());
+                createButton(e);
+                $('#codeform-submit').click(ajaxcall);
+                $('#codeform-submit').click();
+            });
+>>>>>>> fe0b1464372731e4284092e6ea94555dfc9608bc
+        });
+<<<<<<< HEAD
 
         });
         // $('#compileRun').click(compileRun);
         
+||||||| merged common ancestors
+=======
+
+>>>>>>> fe0b1464372731e4284092e6ea94555dfc9608bc
     });
-    
+
+    function end_session() {
+        $.ajax({
+            url: 'deactivate_link/',
+            method: 'get',
+            data: {
+                'link': roomName
+            },
+            dataType: 'json',
+            success: function () {
+                window.location = "{% url 'interview_list' %}"
+            }
+        });
+    }
+    function submit_code() {
+        alert('Thankyou! Your code has been submitted. You can do END SESSION now.');
+    }
+
+    window.onbeforeunload = function () {
+        return "Do you really want to leave our brilliant application?";
+
+    };
 </script>
 
 </html>

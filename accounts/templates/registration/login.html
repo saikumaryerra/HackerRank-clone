@@ -3,7 +3,6 @@
 <head>
   {% load widget_tweaks %} {% load static %}
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
   <link rel='icon' href="{% static 'favicon.ico' %}" type='image/x-icon' />
   <title>Login - HackerRank</title>
 </head>
@@ -13,7 +12,7 @@
     <div class="left">
       <a class="logo_name" href="{% url 'index' %}">HackerRank<img src="{% static 'green-char.png' %}"></a>
       <br>
-      <h1>Login</h1>
+      <h5>Login</h5>
       <form method="POST">
         {% csrf_token %}
         {% for field in form %}
@@ -34,8 +33,10 @@
     <div class="right">
       <span class="loginwith">Sign in with<br />social network</span>
 
-      <a href="{% url 'social:begin' 'google-oauth2' %}"><button class="btn social-signin google">Log in with Google+</button></a>
-      <a href="{% url 'social:begin' 'facebook' %}"><button class="social-signin facebook">Log in with facebook</button></a>
+      <a href="{% url 'social:begin' 'google-oauth2' %}"><button class="btn social-signin google">Log in with
+          Google+</button></a>
+      <a href="{% url 'social:begin' 'facebook' %}"><button class="social-signin facebook">Log in with
+          facebook</button></a>
       <a href="{% url 'social:begin' 'github' %}"><button class="social-signin github">Log in with GitHub</button></a>
     </div>
     <div class="or">OR</div>
@@ -213,5 +214,6 @@
     background: rgb(117, 38, 27);
   }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 
 </html>
