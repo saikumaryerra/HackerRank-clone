@@ -21,8 +21,8 @@
         <span id='_404' style="display:none;">
             <h2>Candidate's Email Not Found</h2>
         </span>
-        <span id='_500' style="display:none;">
-            <h2>Server Error</h2>
+        <span id='_404_2' style="display:none;">
+            <h2>No Active Interview Found</h2>
         </span>
         <button class="btn-success" onclick="ok_click()">
             <b>OK</b></button>
@@ -190,6 +190,7 @@
         document.querySelector('#_404').style.display = 'none';
         document.querySelector('#_403').style.display = 'none';
         document.querySelector('#_401').style.display = 'none';
+        document.querySelector('#_404_2').style.display = 'none';
         document.querySelector('.home_text').style.display = 'block';
     }
 
@@ -201,7 +202,9 @@
                 if (data.active) {
                     window.location = "{% url 'interview_list' %}"
                 } else {
-                    alert("No active interview running");
+                    document.querySelector('#message').style.display = 'block';
+                    document.querySelector('#_404_2').style.display = 'block';
+                    document.querySelector('.home_text').style.display = 'none';
                 }
             }
         });

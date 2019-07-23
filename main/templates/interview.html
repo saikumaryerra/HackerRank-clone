@@ -222,7 +222,7 @@
     var man = {{ man }};
 
     var chatSocket = new WebSocket(
-        'wss://' + window.location.host +
+        'ws://' + window.location.host +
         '/interview/' + roomName);
 
     var initiator;
@@ -269,7 +269,6 @@
             }
         };
         chatSocket.onmessage = function (event) {
-
             var data = JSON.parse(event.data);
             var type = data['type'];
             var message = data['message'];
@@ -394,9 +393,12 @@
 
     document.querySelector('#chat-message-input').focus();
     document.querySelector('#chat-message-input').onkeyup = function (e) {
+        alert('1');
         if (e.keyCode == 13) {
+            alert('2');
             var message = document.querySelector('#chat-message-input').value;
             if (message != null && message.trim() !== '') {
+                alert('3');
                 document.querySelector('#chat-message-submit').click();
             }
         }

@@ -21,18 +21,26 @@ def index(request):
 
 @login_required(login_url="login")
 def interview(request, interview_id):
-   form = codeForm()
-   room_name = interview_id
-   return render(
-      request,
-      "interview.html",
-      {
-          "room_name": room_name,
-          "room_name_json": mark_safe(json.dumps(room_name)),
-          "man": mark_safe(json.dumps(request.user.first_name)),
-          "form": form,
-      },
-   )
+   signal = 500
+   if not InterviewList.objects.filter(active=True).filter(link=interview_id).exists():
+      signal = 404
+   elif InterviewList.objects.filter(active=True).filter(link=interview_id).exists():
+      if InterviewList.objects.filter(candidate__email=request.user.email).filter(link=interview_id).exists()|InterviewList.objects.filter(interviewer__email=request.user.email).filter(link=interview_id).exists():
+         form = codeForm()
+         room_name = interview_id
+         return render(
+            request,
+            "interview.html",
+            {
+                "room_name": room_name,
+                "room_name_json": mark_safe(json.dumps(room_name)),
+                "man": mark_safe(json.dumps(request.user.first_name)),
+                "form": form,
+            },
+         )
+      else:
+         signal = 403
+   return render(request,'error/error.html', {'signal': signal})
 
 @login_required(login_url="login")
 def compile_code(request):
