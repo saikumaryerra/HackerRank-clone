@@ -493,41 +493,6 @@
                     }
                 }));
             };
-<<<<<<< HEAD
-            // editor.getSession().on("change", function () {
-            //     textarea.val(editor.getSession().getValue());
-            // });
-
-            // textarea.on("change",function(){
-            //     chatSocket.send(JSON.stringify({
-            //         'type' : 'code_message',
-            //         'message': textarea.val()
-            //     })); 
-            // });
-            $('#compileRun').click(function(e){
-            textarea.val(editor.getSession().getValue());
-            createButton(e);
-            $('#codeform-submit').click(ajaxcall);
-            $('#codeform-submit').click();
-||||||| merged common ancestors
-            // editor.getSession().on("change", function () {
-            //     textarea.val(editor.getSession().getValue());
-            // });
-
-            // textarea.on("change",function(){
-            //     chatSocket.send(JSON.stringify({
-            //         'type' : 'code_message',
-            //         'message': textarea.val()
-            //     })); 
-            // });
-        });
-        // $('#compileRun').click(compileRun);
-        $('#compileRun').click(function(e){
-            textarea.val(editor.getSession().getValue());
-            createButton(e);
-            $('#codeform-submit').click(ajaxcall);
-            $('#codeform-submit').click();
-=======
 
             $('#compileRun').click(function (e) {
                 textarea.val(editor.getSession().getValue());
@@ -535,17 +500,7 @@
                 $('#codeform-submit').click(ajaxcall);
                 $('#codeform-submit').click();
             });
->>>>>>> fe0b1464372731e4284092e6ea94555dfc9608bc
         });
-<<<<<<< HEAD
-
-        });
-        // $('#compileRun').click(compileRun);
-        
-||||||| merged common ancestors
-=======
-
->>>>>>> fe0b1464372731e4284092e6ea94555dfc9608bc
     });
 
     function end_session() {
