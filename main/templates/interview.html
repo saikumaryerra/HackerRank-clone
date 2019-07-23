@@ -38,7 +38,7 @@
     #local {
         position: absolute;
         bottom: 0;
-        right: 7em;
+        right: 0;
         height: 30%;
         z-index: 1;
     }
@@ -220,7 +220,7 @@
     var man = {{ man }};
 
     var chatSocket = new WebSocket(
-        'wss://' + window.location.host +
+        'ws://' + window.location.host +
         '/interview/' + roomName);
 
 
@@ -408,6 +408,9 @@
 
     chatSocket.onclose = function (e) {
         console.error('Chat socket closed unexpectedly');
+        alert('connection lost reloading the page')
+        window.location.reload(true);
+
     };
 
     document.querySelector('#chat-message-input').focus();
@@ -438,10 +441,14 @@
         }
         time = time + date.getSeconds();
         var message = man + ' : ' + messageInputDom.value + '\n\t\t\t\t\t\t' + time;
+
         chatSocket.send(JSON.stringify({
             'type': 'chat_message',
             'message': message
         }));
+        textarea = document.querySelector('#chat-log');
+        textarea.value += (message + '\n');
+        textarea.scrollTop = textarea.scrollHeight;
 
         messageInputDom.value = '';
     };

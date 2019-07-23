@@ -17,7 +17,7 @@ admin.site.register(Room, RoomAdmin)
 
 
 class RoomMemberAdmin(admin.ModelAdmin):
-    list_display = ('room', 'name')
+    list_display = ('room', 'name' , 'username')
 
 
 admin.site.register(RoomMember, RoomMemberAdmin)

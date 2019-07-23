@@ -17,7 +17,8 @@ class Room(models.Model):
 #       return self.roomname
 
 class RoomMember(models.Model):
-   name = models.CharField(max_length=300)
+   username = models.ForeignKey(User , on_delete=models.CASCADE)
    room = models.ForeignKey(Room, on_delete=models.CASCADE)
-#    def __str__(self):
-    #   return self.room
+   name = models.TextField()
+   # def __str__(self):
+   #    return self.room
