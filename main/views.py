@@ -16,7 +16,7 @@ def index(request):
    user_email = "anonymous"
    if request.user.is_authenticated:
        user_email = request.user.email
-   return render(request, "index.html", {"user_mail": mark_safe(json.dumps(user_email))})
+   return render(request, "index.html", {"user_mail": mark_safe(json.dumps(user_email)), 'name': request.user.first_name})
 
 
 @login_required(login_url="login")
@@ -35,6 +35,7 @@ def interview(request, interview_id):
                 "room_name": room_name,
                 "room_name_json": mark_safe(json.dumps(room_name)),
                 "man": mark_safe(json.dumps(request.user.first_name)),
+                "name": request.user.first_name,
                 "form": form,
             },
          )

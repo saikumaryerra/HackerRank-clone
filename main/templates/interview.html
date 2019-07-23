@@ -15,7 +15,7 @@
 
         </div>
         <div class='text box'>
-            <p>Live Chat</p>
+            <p>Live Chat  [ You: {{name}} ]</p>
 
             <textarea id="chat-log" cols="59" rows="10" readonly></textarea><br />
             <input id="chat-message-input" type="text" size="59" /><br />
@@ -518,7 +518,7 @@
         });
     }
     function submit_code() {
-        document.location.reload();
+        alert('Thankyou! Your code has been submitted. You can do END SESSION now.');
     }
 
     window.onbeforeunload = function () {

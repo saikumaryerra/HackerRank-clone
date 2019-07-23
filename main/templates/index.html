@@ -1,4 +1,10 @@
 {% extends 'layout.html' %}
+{% block nav %}
+{% if user.is_authenticated %}
+<li style="text-transform: uppercase;"><a style="color:black;"><b>{{ name }}</b></a></li>
+{% endif %}
+{% endblock %}
+                    
 {% block body %}
 <br><br>
 <div class="body_container">
