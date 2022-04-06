@@ -51,7 +51,7 @@ social-auth-core==3.2.0
 sqlparse==0.3.0
 toml==0.10.0
 traitlets==4.3.2
-Twisted==19.2.1
+Twisted==22.2.0
 txaio==18.8.1
 urllib3==1.25.3
 wcwidth==0.1.7
